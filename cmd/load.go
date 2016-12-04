@@ -57,6 +57,7 @@ func loadCmd(cmd *cobra.Command, args []string) {
 
 	if (*FlagCPU) {
 		simulator := simulator.NewSimulator(resources.ProcessorSimulation)
-		simulator.Run(*FlagDuration)
+		simulator.Duration = *FlagDuration
+		simulator.Run()
 	}
 }

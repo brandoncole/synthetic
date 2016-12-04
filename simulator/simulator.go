@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"fmt"
+	"math"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -10,6 +11,7 @@ import (
 type Simulator struct {
 	fn        func()
 	completed uint64
+	Duration  time.Duration
 }
 
 type RateLimiter func(completed uint64) bool
@@ -57,6 +59,26 @@ func constantLimiter(startNano int64, qpm uint64) RateLimiter {
 	}
 }
 
+func sineLimiter(startNano int64, qpm uint64, min, max float64) RateLimiter {
+
+	// Integrals calculated from http://www.wolframalpha.com
+	magnitude := (max - min) * float64(qpm)
+	magnitudeOverTwo := magnitude / 2.0
+	magnitudeOverFour := magnitudeOverTwo / 2.0
+	minimum := min * float64(qpm)
+
+	return func(completed uint64) bool {
+
+		elapsedNano := time.Now().UnixNano() - startNano
+		minutes := float64(elapsedNano) / float64(time.Minute)
+		limita := (magnitudeOverTwo + minimum) * minutes
+		limitb := (magnitudeOverFour * math.Sin(2*math.Pi*minutes)) / math.Pi
+		limit := limita - limitb
+
+		return float64(completed) > limit
+	}
+}
+
 func (s *Simulator) calibrate(duration time.Duration) uint64 {
 
 	fmt.Println("Calibration begun...")
@@ -81,31 +103,30 @@ func (s *Simulator) calibrate(duration time.Duration) uint64 {
 
 }
 
-func (s *Simulator) Run(duration time.Duration) {
+func (s *Simulator) Run() {
 
-	cd := 15 * time.Second
+	cd := 10 * time.Second
 	cycles := s.calibrate(cd)
 
 	fmt.Printf("Calibration Cycles: %d\n", cycles)
 
 	goroutines := runtime.NumCPU()
 	quit := make(chan bool)
-	qpm := float64(cycles) * float64(time.Minute/cd) * 0.6
-	fmt.Printf("Target QPM: %v\n", qpm)
+	qpp := float64(cycles) * float64(time.Minute/cd)
+	fmt.Printf("Target QPP: %v\n", qpp)
 	s.completed = 0
 
-	limiter := constantLimiter(time.Now().UnixNano(), uint64(qpm))
+	//limiter := constantLimiter(time.Now().UnixNano(), uint64(qpm))
+	limiter := sineLimiter(time.Now().UnixNano(), uint64(qpp), 0.1, 0.9)
 	for i := 0; i < goroutines; i++ {
 		go s.runner(limiter, quit)
 	}
 
-	if 0 == duration.Nanoseconds() {
-		// Run indefinitely
-		for {
-			time.Sleep(1 * time.Minute)
-		}
+	if 0 == s.Duration.Nanoseconds() {
+		var forever chan bool
+		<-forever
 	} else {
-		<-time.After(duration)
+		<-time.After(s.Duration)
 		for i := 0; i < goroutines; i++ {
 			quit <- true
 		}
