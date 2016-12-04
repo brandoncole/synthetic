@@ -3,12 +3,12 @@ package simulator
 import (
 	"fmt"
 	"runtime"
-	"time"
 	"sync/atomic"
+	"time"
 )
 
 type Simulator struct {
-	fn func()
+	fn        func()
 	completed uint64
 }
 
@@ -81,16 +81,16 @@ func (s *Simulator) calibrate(duration time.Duration) uint64 {
 
 }
 
-func (s *Simulator) Run() {
+func (s *Simulator) Run(duration time.Duration) {
 
-	duration := 10 * time.Second
-	cycles := s.calibrate(duration)
+	cd := 15 * time.Second
+	cycles := s.calibrate(cd)
 
 	fmt.Printf("Calibration Cycles: %d\n", cycles)
 
 	goroutines := runtime.NumCPU()
 	quit := make(chan bool)
-	qpm := float64(cycles) * float64(time.Minute / duration) * 0.6
+	qpm := float64(cycles) * float64(time.Minute/cd) * 0.6
 	fmt.Printf("Target QPM: %v\n", qpm)
 	s.completed = 0
 
@@ -99,10 +99,16 @@ func (s *Simulator) Run() {
 		go s.runner(limiter, quit)
 	}
 
-	<-time.After(30 * time.Second)
-
-	for i := 0; i < goroutines; i++ {
-		quit <- true
+	if 0 == duration.Nanoseconds() {
+		// Run indefinitely
+		for {
+			time.Sleep(1 * time.Minute)
+		}
+	} else {
+		<-time.After(duration)
+		for i := 0; i < goroutines; i++ {
+			quit <- true
+		}
 	}
 
 }

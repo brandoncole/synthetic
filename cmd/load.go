@@ -17,6 +17,8 @@ var (
 	FlagLoadProfileMin    *int
 	FlagLoadProfileMax    *int
 	FlagLoadProfilePeriod *time.Duration
+
+	FlagDuration *time.Duration
 )
 
 func init() {
@@ -45,6 +47,8 @@ synthetic load -c -p sine --profilemin 0 --profilemax 50 --profileperiod 30s`,
 	FlagLoadProfileMax = cmd.Flags().Int("profilemax", 50, "Maximum load as a percentage of available.")
 	FlagLoadProfilePeriod = cmd.Flags().Duration("profileperiod", time.Minute, "Period duration for sine profile in seconds.")
 
+	FlagDuration = cmd.Flags().Duration("duration", 0, "Amount of time to run the load for, or infinite if 0s")
+
 	RootCmd.AddCommand(cmd)
 
 }
@@ -53,6 +57,6 @@ func loadCmd(cmd *cobra.Command, args []string) {
 
 	if (*FlagCPU) {
 		simulator := simulator.NewSimulator(resources.ProcessorSimulation)
-		simulator.Run()
+		simulator.Run(*FlagDuration)
 	}
 }
