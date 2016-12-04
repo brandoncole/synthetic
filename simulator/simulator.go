@@ -26,15 +26,13 @@ func NewSimulator(simulation func()) *Simulator {
 
 func (s *Simulator) runner(rateLimiter RateLimiter, quit chan bool) {
 
-	ticker := time.NewTicker(time.Millisecond).C
-
 	for {
 		select {
 		case <-quit:
 			return
-		case <-ticker:
+		default:
 			if rateLimiter(atomic.LoadUint64(&s.completed)) {
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 			} else {
 				s.fn()
 				atomic.AddUint64(&s.completed, 1)
@@ -55,7 +53,6 @@ func constantLimiter(startNano int64, qpm uint64) RateLimiter {
 		elapsedNano := time.Now().UnixNano() - startNano
 		minutes := float64(elapsedNano) / float64(time.Minute)
 		limit := minutes * float64(qpm)
-		fmt.Printf("Completed: %v, Expected: %v\n", completed, limit)
 		return float64(completed) > limit
 	}
 }
@@ -93,7 +90,7 @@ func (s *Simulator) Run() {
 
 	goroutines := runtime.NumCPU()
 	quit := make(chan bool)
-	qpm := float64(cycles) * float64(time.Minute / duration) * 0.5
+	qpm := float64(cycles) * float64(time.Minute / duration) * 0.6
 	fmt.Printf("Target QPM: %v\n", qpm)
 	s.completed = 0
 

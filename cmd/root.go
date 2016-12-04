@@ -1,15 +1,13 @@
 package cmd
 
 import (
-    "github.com/spf13/cobra"
-    "fmt"
+	"github.com/spf13/cobra"
 )
 
-
 var RootCmd = &cobra.Command{
-    Use:   "synthetic",
-    Short: "Synthetic simulates operational scenarios for microservices",
-    Long: `
+	Use:   "synthetic",
+	Short: "Synthetic simulates operational scenarios for microservices",
+	Long: `
 ........................................................................
 :                                      __   __          __   __        :
 :     **            .-----.--.--.-----|  |_|  |--.-----|  |_|__.----.  :
@@ -19,9 +17,4 @@ var RootCmd = &cobra.Command{
 :           **                                                         :
 ........................................................................
 `,
-}
-
-func init() {
-    p := RootCmd.PersistentFlags().Uint32P("duration", "d", 0, "Limits the duration of the simulation to a specified number of seconds")
-    fmt.Println(p)
 }
