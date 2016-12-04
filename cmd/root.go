@@ -2,7 +2,9 @@ package cmd
 
 import (
     "github.com/spf13/cobra"
+    "fmt"
 )
+
 
 var RootCmd = &cobra.Command{
     Use:   "synthetic",
@@ -20,5 +22,6 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
-    RootCmd.Flags().Uint32P("duration", "d", 0, "Limits the duration of the simulation to a specified number of seconds")
+    p := RootCmd.PersistentFlags().Uint32P("duration", "d", 0, "Limits the duration of the simulation to a specified number of seconds")
+    fmt.Println(p)
 }

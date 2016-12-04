@@ -1,14 +1,18 @@
 package simulator
 
 import (
+	"fmt"
 	"runtime"
 	"time"
-    "fmt"
+	"sync/atomic"
 )
 
 type Simulator struct {
 	fn func()
+	completed uint64
 }
+
+type RateLimiter func(completed uint64) bool
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -20,31 +24,82 @@ func NewSimulator(simulation func()) *Simulator {
 	}
 }
 
-func (s *Simulator) runner(quit chan bool, throughput chan uint64) {
+func (s *Simulator) runner(rateLimiter RateLimiter, quit chan bool) {
 
-	var qty uint64
+	ticker := time.NewTicker(time.Millisecond).C
 
 	for {
 		select {
 		case <-quit:
-			throughput <- qty
 			return
-		default:
-			s.fn()
-			qty++
+		case <-ticker:
+			if rateLimiter(atomic.LoadUint64(&s.completed)) {
+				time.Sleep(1 * time.Millisecond)
+			} else {
+				s.fn()
+				atomic.AddUint64(&s.completed, 1)
+			}
 		}
 	}
 
 }
 
-func (s *Simulator) calibrate() {
+func infiniteLimiter() RateLimiter {
+	return func(completed uint64) bool {
+		return false
+	}
+}
 
-	goroutines := runtime.NumCPU() * 8
+func constantLimiter(startNano int64, qpm uint64) RateLimiter {
+	return func(completed uint64) bool {
+		elapsedNano := time.Now().UnixNano() - startNano
+		minutes := float64(elapsedNano) / float64(time.Minute)
+		limit := minutes * float64(qpm)
+		fmt.Printf("Completed: %v, Expected: %v\n", completed, limit)
+		return float64(completed) > limit
+	}
+}
+
+func (s *Simulator) calibrate(duration time.Duration) uint64 {
+
+	fmt.Println("Calibration begun...")
+	defer fmt.Println("Calibration completed.")
+
+	s.completed = 0
+
+	goroutines := runtime.NumCPU()
 	quit := make(chan bool)
-	results := make(chan uint64)
 
 	for i := 0; i < goroutines; i++ {
-		go s.runner(quit, results)
+		go s.runner(infiniteLimiter(), quit)
+	}
+
+	<-time.After(duration)
+
+	for i := 0; i < goroutines; i++ {
+		quit <- true
+	}
+
+	return s.completed
+
+}
+
+func (s *Simulator) Run() {
+
+	duration := 10 * time.Second
+	cycles := s.calibrate(duration)
+
+	fmt.Printf("Calibration Cycles: %d\n", cycles)
+
+	goroutines := runtime.NumCPU()
+	quit := make(chan bool)
+	qpm := float64(cycles) * float64(time.Minute / duration) * 0.5
+	fmt.Printf("Target QPM: %v\n", qpm)
+	s.completed = 0
+
+	limiter := constantLimiter(time.Now().UnixNano(), uint64(qpm))
+	for i := 0; i < goroutines; i++ {
+		go s.runner(limiter, quit)
 	}
 
 	<-time.After(30 * time.Second)
@@ -52,20 +107,5 @@ func (s *Simulator) calibrate() {
 	for i := 0; i < goroutines; i++ {
 		quit <- true
 	}
-
-    var total uint64
-    for i:= 0 ; i < goroutines; i++ {
-        total += <-results
-    }
-
-    fmt.Printf("Calibration throughput: %d\n", total)
-
-}
-
-func (s *Simulator) Run() {
-
-	fmt.Println("Simulation beginning...")
-	s.calibrate()
-	fmt.Println("Simulation completed.")
 
 }
