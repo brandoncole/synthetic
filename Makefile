@@ -1,7 +1,7 @@
 .PHONY: build help
 
 build:
-	go vet ./ ./resources ./simulator
+	go vet ./ ./cmd ./resources ./simulator
 	go install ./
 
 help:
