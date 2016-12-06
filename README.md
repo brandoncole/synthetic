@@ -1,14 +1,14 @@
 # Background
 
-On multiple occasions as a operator building distributed cloud platforms or tenant of other distributed systems I've encountered the need for the following:
+On multiple occasions as an operator building distributed cloud platforms or tenant of a distributed system I've encountered the need for the following:
 
 * Predictably utilize finite resources of the system (CPU, Memory, Network, Disk, Ports)
-* Push at the edges of a cloud orchestration system (i.e. Docker, Kubernetes, Mesos, ECS, etc.)
-* Have a canary within a cloud orchestration system that warns when resource requests cannot be fulfilled
-* Quantitatively benchmark performance characteristics of multiple cloud systems for fair comparison
-* Generate a predictable log streams that can be used to verify the capture, rotation and retention of distributed logs
+* Push at the edges of a cloud orchestration system (i.e. VirtualBox, Docker, Kubernetes, Mesos, ECS, etc.)
+* Have a canary within a cloud orchestration system that predictably when resource requests cannot be fulfilled
+* Quantitatively benchmark performance characteristics of multiple cloud systems for comparison
+* Generate predictable log streams that can be used to verify the capture, rotation and retention of distributed logs
 
-These simple workflows allow cloud operators and users to answer some very important questions:
+These simple workflows allow cloud operators and tenants to answer some very important questions:
 
 * Cloud Operators
     * What happens if a tenant consumes all of a finite resource?
@@ -24,7 +24,6 @@ These simple workflows allow cloud operators and users to answer some very impor
 # Current Work
 
 This project is just starting and is in its infancy, so it is not recommended that others use it now.  The roadmap shown is there to give the audience an idea of what features are expected to come online shortly at which point it will be considered ready for general use.
-
 
 ![CPU Simulation](docs/cpu-fast.gif)
 
@@ -68,3 +67,8 @@ Flags:
       --profileperiod duration   Period duration for sine profile in seconds. (default 1m0s)
 ```
 
+# Design Documentation
+
+Software documentation for the project is available at the link below courtesy of http://godoc.org
+
+* https://godoc.org/github.com/brandoncole/synthetic

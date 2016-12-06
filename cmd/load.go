@@ -1,3 +1,4 @@
+// Package cmd contains the command implementations for the CLI.
 package cmd
 
 import (
@@ -12,6 +13,8 @@ var (
 	FlagDisk    *bool
 	FlagMemory  *bool
 	FlagNetwork *bool
+
+	FlagCalibrationDuration  *time.Duration
 
 	FlagLoadProfile       *string
 	FlagLoadProfileMin    *int
@@ -43,9 +46,11 @@ synthetic load -c -p sine --profilemin 0 --profilemax 50 --profileperiod 30s`,
 
 	FlagLoadProfile = cmd.Flags().StringP("profile", "p", "flat", "Specifies the load profile [flat, sine]")
 
+	FlagCalibrationDuration = cmd.Flags().Duration("cd", 10 * time.Second, "Length of time to calibrate cpu, network and disk.")
+
 	FlagLoadProfileMin = cmd.Flags().Int("profilemin", 50, "Minimum load as a percentage of available.")
 	FlagLoadProfileMax = cmd.Flags().Int("profilemax", 50, "Maximum load as a percentage of available.")
-	FlagLoadProfilePeriod = cmd.Flags().Duration("profileperiod", time.Minute, "Period duration for sine profile in seconds.")
+	FlagLoadProfilePeriod = cmd.Flags().Duration("profileperiod", 1 * time.Minute, "Period duration for sine profile in seconds.")
 
 	FlagDuration = cmd.Flags().Duration("duration", 0, "Amount of time to run the load for, or infinite if 0s")
 
@@ -55,9 +60,13 @@ synthetic load -c -p sine --profilemin 0 --profilemax 50 --profileperiod 30s`,
 
 func loadCmd(cmd *cobra.Command, args []string) {
 
-	if (*FlagCPU) {
-		simulator := simulator.NewSimulator(resources.ProcessorSimulation)
+	if *FlagCPU {
+		limiter := simulator.NewThroughputLimiterSine(0.1, 0.9)
+		simulator := simulator.NewThroughputSimulator(limiter, resources.ProcessorSimulation)
 		simulator.Duration = *FlagDuration
+		simulator.CalibrationDuration = *FlagCalibrationDuration
+		simulator.PeriodDuration = *FlagLoadProfilePeriod
 		simulator.Run()
 	}
+
 }

@@ -1,96 +1,83 @@
+// Package Simulator is where the implementations of the simulators are located.
 package simulator
 
 import (
 	"fmt"
-	"math"
 	"runtime"
 	"sync/atomic"
 	"time"
 )
 
+// Simulator is the base type that all other simulators are derived from.
 type Simulator struct {
-	fn        func()
-	completed uint64
-	Duration  time.Duration
+	// Duration specifies the amount of time that the simulation will run.  0s is interpreted as infinite.
+	Duration time.Duration
 }
 
-type RateLimiter func(completed uint64) bool
+// ThroughputSimulator is a specific type of simulator that requires throughput calibration to determine the extrema.
+type ThroughputSimulator struct {
+	Simulator
+	CalibrationDuration  time.Duration
+	PeriodDuration       time.Duration
+	limiter              IThroughputLimiter
+	simulation           func()
+	simulationsCompleted uint64
+	simulationsPerPeriod float64
+}
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
-func NewSimulator(simulation func()) *Simulator {
-	return &Simulator{
-		fn: simulation,
+// NewThroughputSimulator creates a new throughput simulator
+func NewThroughputSimulator(limiter IThroughputLimiter, simulation func()) *ThroughputSimulator {
+	return &ThroughputSimulator{
+		limiter:    limiter,
+		simulation: simulation,
 	}
 }
 
-func (s *Simulator) runner(rateLimiter RateLimiter, quit chan bool) {
+func (s *ThroughputSimulator) runner(limiter IThroughputLimiter, quit chan bool) {
+
+	startNano := time.Now().UnixNano()
+
+	state := NewThroughputLimiterState()
+	state.CyclesPerPeriod = s.simulationsPerPeriod
 
 	for {
+
+		elapsed := time.Now().UnixNano() - startNano
+		state.PeriodsCompleted = float64(elapsed) / float64(s.PeriodDuration.Nanoseconds())
+		state.CyclesCompleted = atomic.LoadUint64(&s.simulationsCompleted)
+
 		select {
 		case <-quit:
 			return
 		default:
-			if rateLimiter(atomic.LoadUint64(&s.completed)) {
+			if limiter.Throttled(state) {
 				time.Sleep(10 * time.Millisecond)
 			} else {
-				s.fn()
-				atomic.AddUint64(&s.completed, 1)
+				s.simulation()
+				atomic.AddUint64(&s.simulationsCompleted, 1)
 			}
 		}
 	}
 
 }
 
-func infiniteLimiter() RateLimiter {
-	return func(completed uint64) bool {
-		return false
-	}
-}
-
-func constantLimiter(startNano int64, qpm uint64) RateLimiter {
-	return func(completed uint64) bool {
-		elapsedNano := time.Now().UnixNano() - startNano
-		minutes := float64(elapsedNano) / float64(time.Minute)
-		limit := minutes * float64(qpm)
-		return float64(completed) > limit
-	}
-}
-
-func sineLimiter(startNano int64, qpm uint64, min, max float64) RateLimiter {
-
-	// Integrals calculated from http://www.wolframalpha.com
-	magnitude := (max - min) * float64(qpm)
-	magnitudeOverTwo := magnitude / 2.0
-	magnitudeOverFour := magnitudeOverTwo / 2.0
-	minimum := min * float64(qpm)
-
-	return func(completed uint64) bool {
-
-		elapsedNano := time.Now().UnixNano() - startNano
-		minutes := float64(elapsedNano) / float64(time.Minute)
-		limita := (magnitudeOverTwo + minimum) * minutes
-		limitb := (magnitudeOverFour * math.Sin(2*math.Pi*minutes)) / math.Pi
-		limit := limita - limitb
-
-		return float64(completed) > limit
-	}
-}
-
-func (s *Simulator) calibrate(duration time.Duration) uint64 {
+func (s *ThroughputSimulator) calibrate(duration time.Duration) uint64 {
 
 	fmt.Println("Calibration begun...")
 	defer fmt.Println("Calibration completed.")
 
-	s.completed = 0
+	s.simulationsCompleted = 0
 
 	goroutines := runtime.NumCPU()
 	quit := make(chan bool)
 
+	unlimited := NewThroughputLimiterUnlimited()
 	for i := 0; i < goroutines; i++ {
-		go s.runner(infiniteLimiter(), quit)
+		go s.runner(unlimited, quit)
 	}
 
 	<-time.After(duration)
@@ -99,27 +86,23 @@ func (s *Simulator) calibrate(duration time.Duration) uint64 {
 		quit <- true
 	}
 
-	return s.completed
+	return s.simulationsCompleted
 
 }
 
-func (s *Simulator) Run() {
+func (s *ThroughputSimulator) Run() {
 
-	cd := 10 * time.Second
-	cycles := s.calibrate(cd)
-
-	fmt.Printf("Calibration Cycles: %d\n", cycles)
+	cycles := s.calibrate(s.CalibrationDuration)
+	qpp := float64(cycles) * float64(s.PeriodDuration/s.CalibrationDuration)
+	s.simulationsPerPeriod = qpp
+	fmt.Printf("Calibration Cycles: %d, Cycles Per Period: %f\n", cycles, qpp)
 
 	goroutines := runtime.NumCPU()
 	quit := make(chan bool)
-	qpp := float64(cycles) * float64(time.Minute/cd)
-	fmt.Printf("Target QPP: %v\n", qpp)
-	s.completed = 0
+	s.simulationsCompleted = 0
 
-	//limiter := constantLimiter(time.Now().UnixNano(), uint64(qpm))
-	limiter := sineLimiter(time.Now().UnixNano(), uint64(qpp), 0.1, 0.9)
 	for i := 0; i < goroutines; i++ {
-		go s.runner(limiter, quit)
+		go s.runner(s.limiter, quit)
 	}
 
 	if 0 == s.Duration.Nanoseconds() {
