@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/brandoncole/synthetic.svg?branch=master)](https://travis-ci.org/brandoncole/synthetic)
+[![](https://godoc.org/github.com/brandoncole/synthetic?status.svg)](http://godoc.org/github.com/brandoncole/synthetic)
+[![Apache 2.0](https://img.shields.io/hexpm/l/plug.svg)](LICENSE)
+
 # Background
 
 On multiple occasions as an operator building distributed cloud platforms or tenant of a distributed system I've encountered the need for the following:
