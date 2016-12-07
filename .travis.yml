@@ -1,5 +1,15 @@
+sudo: required
 language: go
-
+services:
+  - docker
 go:
   - 1.7.3
   - master
+services:
+  - docker
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    make dockerize
+    docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push brandoncole/synthetic;
+    fi

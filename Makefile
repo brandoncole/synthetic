@@ -4,6 +4,11 @@ build:
 	go vet ./ ./cmd ./resources ./simulator
 	go install ./
 
+dockerize:
+	mkdir -p bin
+	CGO_ENABLED=0 GOOS=linux go build -o bin/synthetic -a -installsuffix cgo
+	docker build -t brandoncole/synthetic .
+
 help:
 	# TODO Only works on macOS right now.  Add support for Windows et al.
 	- killall godoc
