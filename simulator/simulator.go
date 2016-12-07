@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+const (
+	CPU_MULTIPLIER = 4
+)
+
 // Simulator is the base type that all other simulators are derived from.
 type Simulator struct {
 	// Duration specifies the amount of time that the simulation will run.  0s is interpreted as infinite.
@@ -72,7 +76,7 @@ func (s *ThroughputSimulator) calibrate(duration time.Duration) uint64 {
 
 	s.simulationsCompleted = 0
 
-	goroutines := runtime.NumCPU()
+	goroutines := runtime.NumCPU() * CPU_MULTIPLIER
 	quit := make(chan bool)
 
 	unlimited := NewThroughputLimiterUnlimited()
@@ -97,7 +101,7 @@ func (s *ThroughputSimulator) Run() {
 	s.simulationsPerPeriod = qpp
 	fmt.Printf("Calibration Cycles: %d, Cycles Per Period: %f\n", cycles, qpp)
 
-	goroutines := runtime.NumCPU()
+	goroutines := runtime.NumCPU() * CPU_MULTIPLIER
 	quit := make(chan bool)
 	s.simulationsCompleted = 0
 

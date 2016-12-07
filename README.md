@@ -4,7 +4,7 @@
 
 # Background
 
-On multiple occasions as an operator building distributed cloud platforms or tenant of a distributed system I've encountered the need for the following:
+On multiple occasions as an operator building distributed cloud platforms or as a tenant of a distributed system I've encountered the need for the following:
 
 * Predictably utilize finite resources of the system (CPU, Memory, Network, Disk, Ports)
 * Push at the edges of a cloud orchestration system (i.e. VirtualBox, Docker, Kubernetes, Mesos, ECS, etc.)
@@ -70,9 +70,3 @@ Flags:
       --profilemin int           Minimum load as a percentage of available. (default 50)
       --profileperiod duration   Period duration for sine profile in seconds. (default 1m0s)
 ```
-
-# Design Documentation
-
-Software documentation for the project is available at the link below courtesy of http://godoc.org
-
-* https://godoc.org/github.com/brandoncole/synthetic

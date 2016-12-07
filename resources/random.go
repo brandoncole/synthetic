@@ -4,14 +4,18 @@ import (
     "crypto/rand"
 )
 
+const (
+    SIZE = 1024 * 512
+)
+
 var (
-    megabyte []byte
+    data []byte
 )
 
 func init() {
 
-    megabyte = make([]byte, 1024 * 1024)
-    _, err := rand.Read(megabyte)
+    data = make([]byte, SIZE)
+    _, err := rand.Read(data)
     if nil != err {
         panic(401)
     }
@@ -19,5 +23,9 @@ func init() {
 }
 
 func Data() []byte {
-    return megabyte
+    return data
+}
+
+func DataLength() int {
+    return SIZE
 }

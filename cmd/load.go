@@ -85,4 +85,12 @@ func loadCmd(cmd *cobra.Command, args []string) {
 		simulator.Run()
 	}
 
+	if *FlagDisk {
+		simulator := simulator.NewThroughputSimulator(limiter, resources.DiskSimulation)
+		simulator.Duration = *FlagDuration
+		simulator.CalibrationDuration = *FlagCalibrationDuration
+		simulator.PeriodDuration = *FlagLoadProfilePeriod
+		simulator.Run()
+	}
+
 }
