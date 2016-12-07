@@ -6,6 +6,7 @@ import (
 	"github.com/brandoncole/synthetic/simulator"
 	"github.com/spf13/cobra"
 	"time"
+	"os"
 )
 
 var (
@@ -22,6 +23,11 @@ var (
 	FlagLoadProfilePeriod *time.Duration
 
 	FlagDuration *time.Duration
+)
+
+const (
+	ProfileFlat = "flat"
+	ProfileSine = "sine"
 )
 
 func init() {
@@ -60,8 +66,18 @@ synthetic load -c -p sine --profilemin 0 --profilemax 50 --profileperiod 30s`,
 
 func loadCmd(cmd *cobra.Command, args []string) {
 
+	var limiter simulator.IThroughputLimiter
+
+	switch *FlagLoadProfile {
+	case ProfileFlat:
+		limiter = simulator.NewThroughputLimiterFlat(float64(*FlagLoadProfileMax) / 100.0)
+	case ProfileSine:
+		limiter = simulator.NewThroughputLimiterSine(float64(*FlagLoadProfileMin) / 100.0, float64(*FlagLoadProfileMax) / 100.0)
+	default:
+		os.Exit(1)
+	}
+
 	if *FlagCPU {
-		limiter := simulator.NewThroughputLimiterSine(0.1, 0.9)
 		simulator := simulator.NewThroughputSimulator(limiter, resources.ProcessorSimulation)
 		simulator.Duration = *FlagDuration
 		simulator.CalibrationDuration = *FlagCalibrationDuration
