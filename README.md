@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/brandoncole/synthetic.svg?branch=master)](https://travis-ci.org/brandoncole/synthetic)
+[![Docker Pulls](https://img.shields.io/docker/pulls/brandoncole/synthetic.svg)]()
 [![](https://godoc.org/github.com/brandoncole/synthetic?status.svg)](http://godoc.org/github.com/brandoncole/synthetic)
 [![Apache 2.0](https://img.shields.io/hexpm/l/plug.svg)](LICENSE)
 
@@ -8,7 +9,7 @@ On multiple occasions as an operator building distributed cloud platforms or as 
 
 * Predictably utilize finite resources of the system (CPU, Memory, Network, Disk, Ports)
 * Push at the edges of a cloud orchestration system (i.e. VirtualBox, Docker, Kubernetes, Mesos, ECS, etc.)
-* Have a canary within a cloud orchestration system that predictably when resource requests cannot be fulfilled
+* Deploy a canary or probe within a cloud orchestration system that responds predictably when resource requests cannot be fulfilled
 * Quantitatively benchmark performance characteristics of multiple cloud systems for comparison
 * Generate predictable log streams that can be used to verify the capture, rotation and retention of distributed logs
 
@@ -34,11 +35,10 @@ This project is just starting and is in its infancy, so it is not recommended th
 # Roadmap
 
 1. Technical Debt - the codebase is mostly a proof of concept right now.  A lot of this code needs to be cleaned up.
-2. Dockerize - provide a `Dockerfile` and publicly available versioned image for others to use.
-3. Orchestration - provide configurations to deploy it on common orchestration systems like Kubernetes.
-4. Builds - configure an automated build for the project via a tool like Travis CI
-5. Completeness - flush out the implementation of the network, disk, memory and stdout tests
-6. Refine CLI - refine and document the command line interface and provide more examples
+2. Orchestration - provide configurations to deploy it on common orchestration systems like Kubernetes.
+3. Completeness - flush out the implementation of the network, disk, memory and stdout tests.
+4. Refine CLI - refine and document the command line interface and provide more examples.
+5. Generate Benchmarks - output numeric indicators that can be used to compare two clusters.
 
 # CLI
 

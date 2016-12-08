@@ -14,6 +14,7 @@ var (
 	FlagDisk    *bool
 	FlagMemory  *bool
 	FlagNetwork *bool
+	FlagLogs    *uint32
 
 	FlagCalibrationDuration  *time.Duration
 
@@ -49,13 +50,14 @@ synthetic load -c -p sine --profilemin 0 --profilemax 50 --profileperiod 30s`,
 	FlagDisk = cmd.Flags().BoolP("disk", "d", false, "Enables a synthetic disk load")
 	FlagMemory = cmd.Flags().BoolP("memory", "m", false, "Enables a synthetic memory load")
 	FlagNetwork = cmd.Flags().BoolP("network", "n", false, "Enables a synthetic network load")
+	FlagLogs = cmd.Flags().Uint32P("logs", "l", 1000, "Enables a sequential and synthetic log load via stdout.  MB / Day")
 
-	FlagLoadProfile = cmd.Flags().StringP("profile", "p", "flat", "Specifies the load profile [flat, sine]")
+	FlagLoadProfile = cmd.Flags().StringP("profile", "p", "sine", "Specifies the load profile [flat, sine]")
 
 	FlagCalibrationDuration = cmd.Flags().Duration("cd", 10 * time.Second, "Length of time to calibrate cpu, network and disk.")
 
-	FlagLoadProfileMin = cmd.Flags().Int("profilemin", 50, "Minimum load as a percentage of available.")
-	FlagLoadProfileMax = cmd.Flags().Int("profilemax", 50, "Maximum load as a percentage of available.")
+	FlagLoadProfileMin = cmd.Flags().Int("profilemin", 25, "Minimum load as a percentage of available.")
+	FlagLoadProfileMax = cmd.Flags().Int("profilemax", 75, "Maximum load as a percentage of available.")
 	FlagLoadProfilePeriod = cmd.Flags().Duration("profileperiod", 1 * time.Minute, "Period duration for sine profile in seconds.")
 
 	FlagDuration = cmd.Flags().Duration("duration", 0, "Amount of time to run the load for, or infinite if 0s")
