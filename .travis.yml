@@ -11,5 +11,6 @@ after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     make dockerize;
     docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push brandoncole/synthetic;
+    docker tag brandoncole/synthetic:latest brandoncole/synthetic:$TRAVIS_BUILD_NUMBER;
+    docker push brandoncole/synthetic:$TRAVIS_BUILD_NUMBER;
     fi
